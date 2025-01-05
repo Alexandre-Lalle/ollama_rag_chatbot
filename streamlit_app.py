@@ -5,24 +5,24 @@ This application allows users to upload a PDF, process it,
 and then ask questions about the content using a selected language model.
 """
 
-import streamlit as st
-import logging
 import os
-import tempfile
-import shutil
-import pdfplumber
 import ollama
+import shutil
+import logging
+import tempfile
+import pdfplumber
+import streamlit as st
+from typing import List, Tuple, Dict, Any, Optional
 
-from langchain_community.document_loaders import UnstructuredPDFLoader
 from langchain_ollama import OllamaEmbeddings
-from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Chroma
-from langchain.prompts import ChatPromptTemplate, PromptTemplate
-from langchain_core.output_parsers import StrOutputParser
 from langchain_ollama.chat_models import ChatOllama
 from langchain_core.runnables import RunnablePassthrough
+from langchain_core.output_parsers import StrOutputParser
+from langchain.prompts import ChatPromptTemplate, PromptTemplate
 from langchain.retrievers.multi_query import MultiQueryRetriever
-from typing import List, Tuple, Dict, Any, Optional
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_community.document_loaders import UnstructuredPDFLoader
 
 
 # Streamlit page configuration
@@ -56,10 +56,18 @@ def extract_model_names(
     Returns:
         Tuple[str, ...]: A tuple of model names.
     """
-    logger.info("Extracting model names from models_info")
-    model_names = tuple(model["model"] for model in _models_info["models"])
-    logger.info(f"Extracted model names: {model_names}")
-    return model_names
+    logger.info("Extracting model names from _models_info")
+    
+    # Get all model names from models_info
+    all_model_names = tuple(model["model"] for model in _models_info["models"])
+
+    # Filter for LLMs (excluding embedding models)
+    llm_model_names = [
+        model_name for model_name in all_model_names if not model_name.startswith("nomic")
+    ]
+    logger.info(f"Extracted LLM model names: {llm_model_names}")
+
+    return llm_model_names
 
 
 def create_vector_db(file_upload) -> Chroma:
@@ -114,9 +122,16 @@ def process_question(question: str, vector_db: Chroma, selected_model: str):
     """
     logger.info(f"Processing question: {question} using model: {selected_model}")
     
-    # Initialize LLM
-    llm = ChatOllama(model=selected_model)
+    # Determine if running in Docker
+    is_docker = os.getenv("RUNNING_IN_DOCKER", "false").lower() == "true"
+    logger.info(f"Running in Docker: {is_docker}")
     
+    # Initialize LLM
+    if is_docker:
+       llm = ChatOllama(model=selected_model, base_url="http://host.docker.internal:11434/")
+    else:
+        llm = ChatOllama(model=selected_model) 
+     
     # Query prompt template
     QUERY_PROMPT = PromptTemplate(
         input_variables=["question"],
@@ -153,15 +168,6 @@ def process_question(question: str, vector_db: Chroma, selected_model: str):
         | llm
         | StrOutputParser()
     )
-
-    # response = chain.invoke(question)
-    # logger.info("Question processed and response generated")
-    
-    # response = ""
-    # for token in chain.stream({"question": question}):
-    #     response += token
-    #     yield token  # Yield each token for streaming
-    # logger.info("Question processed and response generated with streaming")
 
     return chain.stream({"question": question})
 

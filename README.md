@@ -26,8 +26,8 @@ A powerful local RAG (Retrieval Augmented Generation) application that lets you 
 
 2. **Clone Repository**
    ```bash
-   git clone https://github.com/tonykipkemboi/ollama_pdf_rag.git
-   cd ollama_pdf_rag
+   git clone https://github.com/Alexandre-Lalle/ollama_pdf_streamer.git
+   cd ollama_pdf_streamer
    ```
 
 3. **Set Up Environment**
