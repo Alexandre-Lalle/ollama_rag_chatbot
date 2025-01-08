@@ -4,16 +4,20 @@ FROM python:3.10-slim
 # Set a working directory
 WORKDIR /app
 
-# Copy the requirements file into the container
-COPY requirements.txt .
+# Install system dependencies needed for PDF processing and graphical rendering
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgl1 \
+    libglib2.0-0 && \
+    rm -rf /var/lib/apt/lists/*
 
-# Install dependencies
+# Copy the requirements file and install Python dependencies
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
+# Copy the application code and all files
 COPY . .
 
-# Ensure that the container can communicate with the `ollama` instance on the host
+# Ensure the container can communicate with the `ollama` instance on the host
 ENV OLLAMA_HOST="host.docker.internal"
 ENV RUNNING_IN_DOCKER="true"
 

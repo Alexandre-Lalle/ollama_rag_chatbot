@@ -82,29 +82,29 @@ def create_vector_db(file_upload) -> Chroma:
     """
     logger.info(f"Creating vector DB from file upload: {file_upload.name}")
     temp_dir = tempfile.mkdtemp()
+    try:
+        path = os.path.join(temp_dir, file_upload.name)
+        with open(path, "wb") as f:
+            f.write(file_upload.getvalue())
+            logger.info(f"File saved to temporary path: {path}")
+            loader = UnstructuredPDFLoader(path)
+            data = loader.load()
 
-    path = os.path.join(temp_dir, file_upload.name)
-    with open(path, "wb") as f:
-        f.write(file_upload.getvalue())
-        logger.info(f"File saved to temporary path: {path}")
-        loader = UnstructuredPDFLoader(path)
-        data = loader.load()
+        text_splitter = RecursiveCharacterTextSplitter(chunk_size=7500, chunk_overlap=100)
+        chunks = text_splitter.split_documents(data)
+        logger.info("Document split into chunks")
 
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
-    chunks = text_splitter.split_documents(data)
-    logger.info("Document split into chunks")
-
-    # Updated embeddings configuration
-    embeddings = OllamaEmbeddings(model="nomic-embed-text")
-    vector_db = Chroma.from_documents(
-        documents=chunks,
-        embedding=embeddings,
-        collection_name="myRAG"
-    )
-    logger.info("Vector DB created")
-
-    shutil.rmtree(temp_dir)
-    logger.info(f"Temporary directory {temp_dir} removed")
+        # Updated embeddings configuration
+        embeddings = OllamaEmbeddings(model="nomic-embed-text")
+        vector_db = Chroma.from_documents(
+            documents=chunks,
+            embedding=embeddings,
+            collection_name="myRAG"
+        )
+        logger.info("Vector DB created")
+    finally:
+        shutil.rmtree(temp_dir)
+        logger.info(f"Temporary directory {temp_dir} removed")
     return vector_db
 
 
