@@ -6,7 +6,7 @@ A robust local RAG (Retrieval Augmented Generation) application enabling seamles
 
 - 🔒 Local-first design: No data leaves your machine  
 - 📄 Smart PDF processing with intelligent chunking  
-- 🧠 Multi-query retrieval for better comprehension  
+- 🧠 **Multi-query retrieval** for better comprehension  
 - 🎯 Cutting-edge RAG implementation via LangChain  
 - ⚡ Real-time **response streaming** for enhanced interactivity  
 - 🖥️ Streamlit-based web interface  
